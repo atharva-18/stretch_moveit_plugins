@@ -1,7 +1,7 @@
 #include <stretch_sensor_manager/stretch_sensor_manager.h>
 #include <rosparam_shortcuts/rosparam_shortcuts.h>
 #include <moveit/kinematic_constraints/utils.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("stretch_sensor_manager");
 
@@ -58,7 +58,9 @@ bool StretchSensorManager::initialize(const rclcpp::Node::SharedPtr& node)
   error += !rosparam_shortcuts::get(node, parameter_ns + "." + sensor_name_ + ".y_angle", sensor_info_.y_angle);
 
   planning_scene_monitor_ = std::make_unique<planning_scene_monitor::PlanningSceneMonitor>(node, robot_model_loader);
-  if (planning_scene_monitor_->getPlanningScene())
+  planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor_);
+
+  if (planning_scene)
   {
     planning_scene_monitor_->startStateMonitor();
     planning_scene_monitor_->requestPlanningSceneState();
@@ -91,9 +93,8 @@ bool StretchSensorManager::pointSensorTo(const std::string& name, const geometry
   }
 
   planning_scene_monitor_->requestPlanningSceneState();
-  planning_scene_monitor_->lockSceneRead();
-  auto planning_scene = planning_scene::PlanningScene::clone(planning_scene_monitor_->getPlanningScene());
-  planning_scene_monitor_->unlockSceneRead();
+  planning_scene_monitor::LockedPlanningSceneRO planning_scene_locked(planning_scene_monitor_);
+  auto planning_scene = planning_scene::PlanningScene::clone(planning_scene_locked);
   const std::string& link_name = robot_model_->getJointModelGroup(planning_group_)->getLinkModelNames().back();
   const Eigen::Isometry3d link_frame = planning_scene->getFrameTransform(link_name);
   // Calculating the frame the align the vector pointing from the link origin to the target point with one of the

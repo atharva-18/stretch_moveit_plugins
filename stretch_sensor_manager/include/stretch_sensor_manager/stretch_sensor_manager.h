@@ -28,7 +28,8 @@ protected:
   std::string sensor_name_;
   std::string planning_group_;
   planning_pipeline::PlanningPipelineUniquePtr planning_pipeline_;
-  planning_scene_monitor::PlanningSceneMonitorUniquePtr planning_scene_monitor_;
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+  // planning_scene_monitor::LockedPlanningSceneRO locked_planning_scene_;
   moveit::core::RobotModelPtr robot_model_;
 };
 }  // namespace stretch_sensor_manager
